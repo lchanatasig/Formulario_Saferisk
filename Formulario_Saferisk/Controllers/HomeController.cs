@@ -28,36 +28,41 @@ public class HomeController : Controller
         return View();
     }
 
-
-
     [HttpPost("InsertarDatos")]
     public async Task<IActionResult> InsertarDatos([FromBody] Dato request)
     {
         if (request == null)
         {
-            return BadRequest("Solicitud inválida.");
+            return BadRequest(new { message = "Solicitud inválida." });
         }
 
         try
         {
-            bool insertado = await _datosService.InsertarDatosAsync(
+            ResultadoOperacion resultado = await _datosService.InsertarDatosAsync(
                 request.NombresCompletos,
                 request.Perfil,
                 request.Broker,
                 request.Correo,
-                request.Ciudad
+                request.Ciudad,
+                request.Cedula
             );
 
-            if (!insertado)
+            if (!resultado.Success)
             {
-                return Conflict(new { message = "El correo ya está registrado." });
+                // Puedes devolver distintos códigos según el mensaje
+                if (resultado.Message.Contains("correo"))
+                    return Conflict(new { message = resultado.Message });
+
+                if (resultado.Message.Contains("cédula"))
+                    return Conflict(new { message = resultado.Message });
+
+                return BadRequest(new { message = resultado.Message });
             }
 
-            return Ok(new { message = "Datos insertados correctamente." });
+            return Ok(new { message = resultado.Message });
         }
         catch (Exception ex)
         {
-            // Aquí puedes agregar logging o telemetría si lo deseas
             return StatusCode(500, new { message = "Error al insertar datos.", error = ex.Message });
         }
     }

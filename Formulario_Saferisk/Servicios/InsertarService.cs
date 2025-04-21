@@ -18,7 +18,7 @@ namespace Formulario_Saferisk.Servicios
             _httpContextAccessor = httpContextAccessor;
         }
 
-        public async Task<bool> InsertarDatosAsync(string nombresCompletos, string perfil, string broker, string correo, string ciudad)
+        public async Task<ResultadoOperacion> InsertarDatosAsync(string nombresCompletos, string perfil, string broker, string correo, string ciudad, string cedula)
         {
             using (SqlConnection connection = new SqlConnection(_dbContext.Database.GetConnectionString()))
             {
@@ -31,8 +31,8 @@ namespace Formulario_Saferisk.Servicios
                     command.Parameters.AddWithValue("@broker", broker);
                     command.Parameters.AddWithValue("@correo", correo);
                     command.Parameters.AddWithValue("@ciudad", ciudad);
+                    command.Parameters.AddWithValue("@cedula", cedula);
 
-                    // Parámetro para capturar el valor de retorno del SP
                     var returnParameter = new SqlParameter
                     {
                         ParameterName = "@ReturnVal",
@@ -44,7 +44,27 @@ namespace Formulario_Saferisk.Servicios
                     await command.ExecuteNonQueryAsync();
 
                     int result = (int)returnParameter.Value;
-                    return result == 1; // true = éxito, false = correo duplicado
+
+                    var response = new ResultadoOperacion();
+
+                    switch (result)
+                    {
+                        case 1:
+                            response.Success = true;
+                            response.Message = "Datos insertados correctamente, sus credenciales seran enviadas en el lapso de 2 dias laborales.";
+                            break;
+                        case -1:
+                            response.Success = false;
+                            response.Message = "Ya existe un registro con la misma cedula o con el mismo broker.";
+                            break;
+
+                        default:
+                            response.Success = false;
+                            response.Message = "Error desconocido al insertar los datos.";
+                            break;
+                    }
+
+                    return response;
                 }
             }
         }

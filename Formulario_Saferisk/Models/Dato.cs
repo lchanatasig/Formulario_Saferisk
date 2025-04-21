@@ -18,4 +18,5 @@ public partial class Dato
     public DateTime? FechaRegistro { get; set; }
 
     public string? Ciudad { get; set; }
+    public string? Cedula { get; set; }
 }
